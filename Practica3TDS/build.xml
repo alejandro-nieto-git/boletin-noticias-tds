@@ -1,0 +1,179 @@
+<project name="EnvoltorioMaven" default="compilar" basedir=".">
+	<description>
+		Fichero build de Ant con los objetivos de apoyo para el uso de maven
+	</description>
+
+	<!-- Properties -->
+	<property name="jacocoagent" location="target/coverage/jacoco.exec" />
+	<property environment="env" />
+
+	<!-- Condiciones para el tratamiento de OS -->
+	<condition property="isWindows">
+		<os family="windows" />
+	</condition>
+	<condition property="isUnix">
+		<os family="unix" />
+	</condition>
+
+	<!-- Condicion para comprobar la existencia del agente -->
+	<condition property="jacoco-agent-present">
+		<available file="${jacocoagent}" />
+	</condition>
+
+	<!-- Objetivos -->
+
+	<!-- Objetivo compilar -->
+	<target name="compilar" description="obtiene dependencias y compila" depends="limpiar">
+		<exec dir="." executable="${executable}">
+			<arg line="${arglineIni} mvn compile test-compile${arglineEnd}" />
+		</exec>
+	</target>
+
+	<!-- Objetivo ejecutarTodoSinAislamiento -->
+	<target name="ejecutarTodoSinAislamiento" description="ejecuta todos los test excepto los de aislamiento" depends="os-check">
+		<exec dir="." executable="${executable}">
+			<arg line="${arglineIni} mvn test -P TodosMenosAislamiento${arglineEnd}" />
+		</exec>
+	</target>
+
+	<!-- Objetivo ejecutarTodoNoticia -->
+	<target name="ejecutarTodoNoticia" description="ejecuta todos los test de noticia" depends="os-check">
+		<exec dir="." executable="${executable}">
+			<arg line="${arglineIni} mvn test -P Noticia${arglineEnd}" />
+		</exec>
+	</target>
+
+	<!-- Objetivo ejecutarBoletinSinAislamiento -->
+	<target name="ejecutarBoletinSinAislamiento" description="ejecuta todos los test sin aislamiento de boletin" depends="os-check">
+		<exec dir="." executable="${executable}">
+			<arg line="${arglineIni} mvn test -P BoletinSinAislamiento${arglineEnd}" />
+		</exec>
+	</target>
+	
+	<!-- Objetivo ejecutarBoletinAislamiento -->
+		<target name="ejecutarBoletinAislamiento" description="ejecuta todos los test en aislamiento de boletin" depends="os-check">
+			<exec dir="." executable="${executable}">
+				<arg line="${arglineIni} mvn test -P BoletinAislamiento${arglineEnd}" />
+			</exec>
+		</target>
+
+
+	<!-- Objetivo ejecutarTodosEnAislamiento -->
+	<target name="ejecutarTodosEnAislamiento" description="ejecuta todos los test en aislamiento" depends="os-check">
+		<exec dir="." executable="${executable}">
+			<arg line="${arglineIni} mvn test -P Isolation${arglineEnd}" />
+		</exec>
+	</target>
+
+	<!-- Objetivo ejecutarTestsTDDyCajaNegra -->
+	<target name="ejecutarTestsTDDyCajaNegra" description="pruebas TDD y de caja negra" depends="os-check, ejecutarTDD, ejecutarCajaNegra" />
+
+	<!-- Objetivo ejecutarTDD -->
+	<target name="ejecutarTDD" description="pruebas de TDD" depends="os-check">
+		<exec dir="." executable="${executable}">
+			<arg line="${arglineIni} mvn test -P TDD${arglineEnd}" />
+		</exec>
+	</target>
+
+	<!-- Objetivo ejecutarCajaNegra -->
+	<target name="ejecutarCajaNegra" description="pruebas de caja negra" depends="os-check">
+		<exec dir="." executable="${executable}">
+			<arg line="${arglineIni} mvn test -P BlackBox${arglineEnd}" />
+		</exec>
+	</target>
+
+	<!-- Objetivo ejecutarPruebasSecuencia -->
+	<target name="ejecutarPruebasSecuencia" description="pruebas de secuencia" depends="os-check">
+		<exec dir="." executable="${executable}">
+			<arg line="${arglineIni} mvn test -P Sequence${arglineEnd}" />
+		</exec>
+	</target>
+
+	<!-- Objetivo ejecutaCajaBlanca -->
+	<target name="ejecutaCajaBlanca" description="pruebas de caja blanca" depends="os-check">
+		<exec dir="." executable="${executable}">
+			<arg line="${arglineIni} mvn test -P WhiteBox${arglineEnd}" />
+		</exec>
+	</target>
+
+	<!-- Objetivo ejecutaCajaBlancaNoticia -->
+	<target name="ejecutaCajaBlancaNoticia" description="caja blanca de Noticia" depends="os-check">
+		<exec dir="." executable="${executable}">
+			<arg line="${arglineIni} mvn test -P cajaBlancaNoticia${arglineEnd}" />
+		</exec>
+	</target>
+
+	<!-- Objetivo ejecutaCajaBlancaBoletin -->
+	<target name="ejecutaCajaBlancaBoletin" description="caja blanca de Boletin" depends="os-check">
+		<exec dir="." executable="${executable}">
+			<arg line="${arglineIni} mvn test -P cajaBlancaBoletin${arglineEnd}" />
+		</exec>
+	</target>
+
+	<!-- Objetivo ejecutaCajaNegraNoticia -->
+	<target name="ejecutaCajaNegraNoticia" description="caja negra de Noticia" depends="os-check">
+		<exec dir="." executable="${executable}">
+			<arg line="${arglineIni} mvn test -P cajaNegraNoticia${arglineEnd}" />
+		</exec>
+	</target>
+
+	<!-- Objetivo ejecutaCajaNegraBoletin -->
+	<target name="ejecutaCajaNegraBoletin" description="caja negra de Boletin" depends="os-check">
+		<exec dir="." executable="${executable}">
+			<arg line="${arglineIni} mvn test -P cajaNegraBoletin${arglineEnd}" />
+		</exec>
+	</target>
+
+	<!-- Objetivo obtenerInformeCobertura -->
+	<target name="obtenerInformeCobertura" description="obtener informes de cobertura" depends="compilar, prepare-agent">
+		<exec dir="." executable="${executable}">
+			<arg line="${arglineIni} mvn -X -Djacoco.dataFile=${jacocoagent} -Djacoco.outputDirectory=./jacoco_ut org.jacoco:jacoco-maven-plugin:report${arglineEnd}" />
+		</exec>
+	</target>
+
+	<target name="prepare-agent">
+		<exec dir="." executable="${executable}">
+			<arg line="${arglineIni} mvn -Djacoco.destFile=${jacocoagent} clean org.jacoco:jacoco-maven-plugin:prepare-agent install -Pcoverage-per-test${arglineEnd}" />
+		</exec>
+	</target>
+
+	<!-- Objetivo site -->
+	<target name="site" description="genera un site con la documentación del proyecto" depends="documentar">
+		<exec dir="." executable="${executable}">
+			<arg line="${arglineIni} mvn site${arglineEnd}" />
+		</exec>
+	</target>
+
+	<!-- Objetivo documentar -->
+	<target name="documentar" description="genera el javadoc del proyecto" depends="os-check">
+		<exec dir="." executable="${executable}">
+			<arg line="${arglineIni} mvn javadoc:javadoc${arglineEnd}" />
+		</exec>
+	</target>
+
+	<!-- Objetivo limpiar -->
+	<target name="limpiar" description="Elimina archivos innecesarios" depends="os-check">
+		<exec dir="." executable="${executable}">
+			<arg line="${arglineIni} mvn clean${arglineEnd}" />
+		</exec>
+	</target>
+
+	<!-- Objetivo calidad -->
+	<target name="calidad" description=" realiza un analisis de calidad del proyecto utilizando sonarqube en modo publish" depends="os-check, obtenerInformeCobertura">
+		<exec dir="." executable="${executable}">
+			<arg line="${arglineIni} mvn sonar:sonar -Dsonar.host.url=https://sonarqube.inf.uva.es/ -Dsonar.login=29d5fb330551d1446ac0cccd2c96e5312cf22a68 -Dsonar.analysis.mode=publish -Dsonar.issuesReport.console.enable=true -Dsonar.jacoco.reportPath=target/coverage/jacoco.exec -Dsonar.junit.reportPaths=target/surefire-reports${arglineEnd}" />
+		</exec>
+	</target>
+
+	<target name="os-check" description="Determina sistema operativo y asigna executable y argline" depends="os-check-unix, os-check-win" />
+	<target name="os-check-unix" if="isUnix">
+		<property name="executable" value="sh" />
+		<property name="arglineIni" value="-c '" />
+		<property name="arglineEnd" value="'" />
+	</target>
+	<target name="os-check-win" if="isWindows">
+		<property name="executable" value="cmd" />
+		<property name="arglineIni" value="/c " />
+		<property name="arglineEnd" value="" />
+	</target>
+</project>
